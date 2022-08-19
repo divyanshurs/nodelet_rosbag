@@ -9,7 +9,10 @@
 #include <nodelet_rosbag/SubscribeAction.h>
 #include <nodelet_rosbag/StartAction.h>
 #include <nodelet_rosbag/StopAction.h>
+#include <boost/utility/in_place_factory.hpp> 
 #include <nodelet_rosbag/RecordAction.h>
+#include <ros/master.h>
+#include <thread>
 
 
 namespace nodelet_rosbag
@@ -22,9 +25,19 @@ public:
     record_actionserver_(nh_, "record", false),
     start_actionserver_(nh_, "start", false),
     stop_actionserver_(nh_, "stop", false),
-    recording_(false) {
+    recording_(false)   
+  {
     private_nh_.getParam("rosbag_path", rosbag_path_);
     private_nh_.getParam("rosbag_record_topics", rosbag_record_topics_);
+
+    ros::master::V_TopicInfo master_topics;
+    ros::master::getTopics(master_topics);
+
+    for (ros::master::V_TopicInfo::iterator it = master_topics.begin() ; it != master_topics.end(); it++) {
+        const ros::master::TopicInfo& info = *it;
+        std::cout << "Topic : " << it - master_topics.begin() << ": " << info.name << " -> " << info.datatype <<       std::endl;
+        rosbag_record_topics_.push_back(info.name);
+    }
 
     record_actionserver_.registerGoalCallback(
       boost::bind(&NodeRosbagImpl::mode_callback, this));
@@ -37,7 +50,7 @@ public:
     stop_actionserver_.registerGoalCallback(
       boost::bind(&NodeRosbagImpl::stop_callback, this));
     stop_actionserver_.start();
-}
+  }
 
 private:
   ros::NodeHandle &nh_;

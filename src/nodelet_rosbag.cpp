@@ -15,6 +15,8 @@ namespace nodelet_rosbag
   void NodeRosbagImpl::start_callback() {
     boost::mutex::scoped_lock(rosbag_mode_mtx_);
     if (recording_) {
+      std::cout << "RECORDING START" <<std::endl;
+      std::cout << rosbag_record_topics_.size() <<std::endl;
       for(int i = 0; i < rosbag_record_topics_.size(); ++i) {
         ros::Subscriber subscriber = private_nh_.subscribe(
           rosbag_record_topics_[i], 10, &NodeRosbagImpl::record_callback, this);
@@ -54,6 +56,7 @@ namespace nodelet_rosbag
   void NodeRosbagImpl::stop_callback() {
     boost::mutex::scoped_lock(rosbag_mode_mtx_);
     if (recording_) {
+      std::cout << "RECORDING STOP" <<std::endl;
       for(int i = 0; i < rosbag_record_topics_.size(); ++i) {
         private_nh_.shutdown();
       }
@@ -67,6 +70,7 @@ namespace nodelet_rosbag
         pair.second.shutdown();
       }
     }
+    std::cout << "CLOSED" << std::endl;
     bag_.close();
   }
 
@@ -77,6 +81,7 @@ namespace nodelet_rosbag
     // TODO(esteve): add error recovery
     bag_.close();
     if (recording_) {
+      std::cout << "dskjbvkjnd" << std::endl;
       bag_.open(rosbag_path_, rosbag::bagmode::Write);
     } else {
       for(int i = 0; i < rosbag_record_topics_.size(); ++i) {
@@ -86,11 +91,22 @@ namespace nodelet_rosbag
     }
   }
 
+
   void NodeRosbagImpl::record_callback(const ros::MessageEvent<topic_tools::ShapeShifter const> & event)
   {
     boost::mutex::scoped_lock(rosbag_bag_mtx_);
     ros::M_string& header = event.getConnectionHeader();
+    // header = event.getConnectionHeader();
     topic_tools::ShapeShifter::ConstPtr message = event.getMessage();
+    // message = event.getMessage();
+
+    // std::thread thread(&NodeRosbagImpl::spawn_thread());
+    //   // std::cout << "WRITING" << std::endl;
+    // thread.join();
+
+    std::thread main_thread([&](){
     bag_.write(header["topic"], ros::Time::now(), message);
-  }
+    });
+    main_thread.join();
+  } 
 }

@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="nodelet" type="nodelet" name="nodelet_rosbag" args="load nodelet_rosbag/NodeletRosbag /camera/realsense2_camera_manager">
+    <param name="rosbag_path" value="$(find nodelet_rosbag)/try.bag"/>
+  </node>
+</launch>
